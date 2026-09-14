@@ -1,0 +1,495 @@
+﻿@page "/Edit/{id:int?}"
+@model DCRManagementSystem.Api.Pages.Dcr.EditModel
+@using System.Text.Json
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = Model.Input.Id.HasValue ? "Sửa DCR" : "Tạo DCR";
+}
+
+<div class="dcr-page">
+    <header class="dcr-topbar">
+        <div>
+            <div class="dcr-eyebrow">DCR WEB PORTAL</div>
+            <h1>@(Model.Input.Id.HasValue ? $"Sửa {Model.Input.DCRNumber}" : "Tạo DCR mới")</h1>
+            <p>Biểu mẫu Web tương ứng 5 bước chính của ứng dụng DCR WinForms.</p>
+        </div>
+        <div class="dcr-topbar-actions">
+            <a class="dcr-btn dcr-btn--secondary" href="@(Model.Input.Id.HasValue ? $"/Request/{Model.Input.Id}" : "/")">← Quay lại</a>
+            <a class="dcr-btn dcr-btn--ghost" href="/ChangePassword">Đổi mật khẩu</a>
+            <a class="dcr-btn dcr-btn--ghost" href="/Logout">Đăng xuất</a>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="dcr-alert dcr-alert--danger">@Model.ErrorMessage</div>
+    }
+
+    <form method="post" enctype="multipart/form-data" class="dcr-edit-form" data-dcr-submit-once>
+        <input type="hidden" asp-for="Input.Id" />
+        <input type="hidden" asp-for="Input.CreationToken" />
+        <input type="hidden" asp-for="Input.DCRNumber" />
+        <input type="hidden" asp-for="Input.RowVersionBase64" />
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>1. Thông tin chung & Dòng sản phẩm</span><span>Bắt buộc *</span></div>
+            <div class="dcr-panel-body dcr-form-grid">
+                <label class="span-2">
+                    <span>Tiêu đề *</span>
+                    <input asp-for="Input.Title" />
+                </label>
+                <label>
+                    <span>Rank *</span>
+                    <select asp-for="Input.Rank" id="dcrRank">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="S">S</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Phòng ban yêu cầu *</span>
+                    <select asp-for="Input.RequestingDepartmentId">
+                        <option value="0">-- Chọn phòng ban yêu cầu --</option>
+                        @foreach (var dep in Model.Departments)
+                        {
+                            <option value="@dep.Id">@dep.DepartmentCode - @dep.DepartmentName</option>
+                        }
+                    </select>
+                    @if (!Model.Input.Id.HasValue && Model.Input.RequestingDepartmentId <= 0)
+                    {
+                        <small class="dcr-field-hint">Tài khoản cấp Director trở lên không có phòng ban mặc định: vui lòng chọn phòng ban cho DCR này.</small>
+                    }
+                </label>
+                <label>
+                    <span>Nhóm Module</span>
+                    <input asp-for="Input.ModuleGroup" />
+                </label>
+                <label>
+                    <span>Dòng sản phẩm *</span>
+                    <select asp-for="Input.Program">
+                        <option value="">-- Chọn --</option>
+                        @foreach (var p in Model.ProductLines)
+                        {
+                            <option value="@p.Name">@p.Name</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    <span>Build Stage *</span>
+                    <input asp-for="Input.BuildStage" />
+                </label>
+                <label><span>ECR liên quan</span><input asp-for="Input.RelatedECR" /></label>
+                <label><span>PPS liên quan</span><input asp-for="Input.RelatedPPS" /></label>
+                <label><span>ECN liên quan</span><input asp-for="Input.RelatedECN" /></label>
+                <label><span>MCN liên quan</span><input asp-for="Input.RelatedMCN" /></label>
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title">
+                <span>2. Danh sách linh kiện</span>
+                <button type="button" class="dcr-mini-btn" id="addPartButton">+ Thêm linh kiện</button>
+            </div>
+            <div class="dcr-table-wrap">
+                <table class="dcr-table dcr-edit-table" id="partsTable">
+                    <thead>
+                        <tr><th>Change *</th><th>Part Number *</th><th>Part Name *</th><th>KPC</th><th>Quantity *</th><th>Replaced By</th><th></th></tr>
+                    </thead>
+                    <tbody id="partsBody">
+                    @for (var i = 0; i < Model.Input.Parts.Count; i++)
+                    {
+                        var part = Model.Input.Parts[i];
+                        <tr class="part-row">
+                            <td>
+                                <input type="hidden" name="Input.Parts[@i].Id" value="@part.Id" />
+                                <select name="Input.Parts[@i].ChangeType">
+                                    <option value="">-- Chọn --</option>
+                                    @foreach (var ct in Model.ChangeTypes)
+                                    {
+                                        if (ct.Name == part.ChangeType)
+                                        {
+                                            <option value="@ct.Name" selected>@ct.Name</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@ct.Name">@ct.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </td>
+                            <td><input name="Input.Parts[@i].PartNumber" value="@part.PartNumber" /></td>
+                            <td><input name="Input.Parts[@i].PartName" value="@part.PartName" /></td>
+                            <td><input name="Input.Parts[@i].KPC" value="@part.KPC" /></td>
+                            <td><input name="Input.Parts[@i].Quantity" value="@part.Quantity" /></td>
+                            <td><input name="Input.Parts[@i].ReplacedBy" value="@part.ReplacedBy" /></td>
+                            <td><button class="dcr-icon-btn remove-part" type="button" title="Xóa dòng">×</button></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <div class="dcr-panel-body dcr-help-text">
+                Có thể lưu Draft khi chưa hoàn tất. Khi Submit, mỗi dòng linh kiện cần Change Type, Part Number, Part Name và Quantity.
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>3. Vấn đề, giải pháp & Phòng ban ảnh hưởng</span></div>
+            <div class="dcr-panel-body dcr-form-grid">
+                <label class="span-2">
+                    <span>Problem Description *</span>
+                    <textarea asp-for="Input.ProblemDescription" rows="5"></textarea>
+                </label>
+                <label class="span-2">
+                    <span>Solution *</span>
+                    <textarea asp-for="Input.Solution" rows="5"></textarea>
+                </label>
+                <label><span>Material Change</span><textarea asp-for="Input.MaterialChangeDescription" rows="3"></textarea></label>
+                <label><span>Form / Fit / Function</span><textarea asp-for="Input.FormFitFunctionDetail" rows="3"></textarea></label>
+                <label><span>Retrofit Volume</span><input asp-for="Input.RetrofitVolume" /></label>
+                <label><span>Retrofit Instruction</span><textarea asp-for="Input.RetrofitInstruction" rows="3"></textarea></label>
+
+                <div class="span-2 dcr-attachment-editor">
+                    <div class="dcr-attachment-editor-head">
+                        <span class="dcr-field-label">Tài liệu đính kèm</span>
+                        <button id="addAttachmentButton" class="dcr-mini-btn" type="button">+ Thêm tài liệu</button>
+                    </div>
+                    <div id="attachmentRows" class="dcr-attachment-rows">
+                        @for (var i = 0; i < Model.AttachmentRows.Count; i++)
+                        {
+                            <div class="dcr-attachment-row">
+                                <label>
+                                    <span>Loại tài liệu</span>
+                                    <select asp-for="AttachmentRows[i].AttachmentType">
+                                        @foreach (var type in Model.AttachmentTypeOptions)
+                                        {
+                                            <option value="@type.Value">@type.DisplayName</option>
+                                        }
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>Tệp đính kèm</span>
+                                    <input asp-for="AttachmentRows[i].File" type="file" />
+                                </label>
+                                <button class="dcr-icon-btn remove-attachment" type="button" title="Xóa dòng tài liệu">×</button>
+                            </div>
+                        }
+                    </div>
+                    <small class="dcr-field-hint">Mỗi dòng là một tệp và một loại tài liệu riêng. Thêm dòng để tải các loại tài liệu khác nhau.</small>
+                </div>
+
+                <div class="span-2">
+                    <span class="dcr-field-label">Impacted Departments *</span>
+                    <div class="dcr-check-grid">
+                        @foreach (var dep in Model.Departments)
+                        {
+                            <div class="dcr-impact-row">
+                            <label class="dcr-check">
+                                @if (Model.SelectedImpactDepartmentIds.Contains(dep.Id))
+                                {
+                                    <input type="checkbox" name="SelectedImpactDepartmentIds" value="@dep.Id" checked />
+                                }
+                                else
+                                {
+                                    <input type="checkbox" name="SelectedImpactDepartmentIds" value="@dep.Id" />
+                                }
+                                <span>@dep.DepartmentCode - @dep.DepartmentName</span>
+                            </label>
+                            @{ Model.ImpactCosts.TryGetValue(dep.Id, out var impactCost); }
+                            <input type="number" step="0.01" min="0" name="ImpactCosts[@dep.Id]" value="@impactCost" placeholder="Chi phí dự kiến" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>4. Kế hoạch & Tracking</span></div>
+            <div class="dcr-panel-body dcr-form-grid">
+                <label class="dcr-check">
+                    <input asp-for="Input.MaterialIdentificationRequired" />
+                    <span>Yêu cầu nhận diện vật liệu</span>
+                </label>
+                <label><span>Station for Material Usage</span><input asp-for="Input.MaterialUsageStation" /></label>
+                <label class="dcr-check">
+                    <input asp-for="Input.SupplierSupportsMRD" />
+                    <span>Supplier supports MRD</span>
+                </label>
+                <label><span>Expected Arrival Date</span><input asp-for="Input.ExpectedArrivalDate" type="date" /></label>
+                <label class="dcr-check">
+                    <input asp-for="Input.TemporaryProcessRequired" />
+                    <span>Temporary process required</span>
+                </label>
+                <label class="dcr-check">
+                    <input asp-for="Input.ReworkRequired" />
+                    <span>Rework required</span>
+                </label>
+                <label><span>Planned Start Date</span><input asp-for="Input.PlannedStartDate" type="date" /></label>
+                <label><span>Planned End Date</span><input asp-for="Input.PlannedEndDate" type="date" /></label>
+                <label class="span-2"><span>Production Order Number</span><input asp-for="Input.ProductionOrderNumber" /></label>
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>5. Approval Plan</span><span>Cùng chức năng với phần mềm DCR</span></div>
+            <div class="dcr-panel-body">
+                <div class="dcr-plan-tools">
+                    <label><span>Cấu hình theo Rank</span><select id="approvalTemplate"></select></label>
+                    <button type="button" class="dcr-mini-btn" id="loadApprovalTemplate">Nạp cấu hình</button>
+                    <label class="dcr-plan-search"><span>Tìm người duyệt</span><input id="approverSearch" placeholder="Tên, email, username, phòng ban..." /></label>
+                    <button type="button" class="dcr-mini-btn" id="searchApprover">Tìm</button>
+                    <select id="approverResults"><option value="">-- Chọn kết quả --</option></select>
+                </div>
+                <div class="dcr-plan-tools dcr-plan-tools--level">
+                    <label><span>Cấp</span><input type="number" id="approvalLevel" min="1" max="99" value="1" /></label>
+                    <label><span>Tên cấp</span><input id="approvalLevelName" value="Cấp phê duyệt 1" /></label>
+                    <button type="button" class="dcr-mini-btn" id="addApprover">+ Thêm người duyệt</button>
+                    <button type="button" class="dcr-mini-btn" id="nextApprovalLevel">+ Cấp mới</button>
+                </div>
+                <div class="dcr-table-wrap">
+                    <table class="dcr-table dcr-edit-table" id="approvalPlanTable">
+                        <thead><tr><th>Cấp</th><th>Tên cấp</th><th>Người duyệt</th><th>Email</th><th>Role</th><th>Khối / Phòng ban</th><th></th></tr></thead>
+                        <tbody id="approvalPlanBody"></tbody>
+                    </table>
+                </div>
+                <div class="dcr-help-text">Mẫu theo Rank chỉ là gợi ý. Bạn có thể thêm hoặc xóa người duyệt trước khi lưu/Submit.</div>
+            </div>
+        </section>
+
+        <div class="dcr-sticky-actions">
+            <a class="dcr-btn dcr-btn--secondary" href="@(Model.Input.Id.HasValue ? $"/Request/{Model.Input.Id}" : "/")">Hủy</a>
+            <button class="dcr-btn dcr-btn--primary" type="submit" name="Action" value="save">Lưu</button>
+            <button class="dcr-btn dcr-btn--success" type="submit" name="Action" value="submit">Lưu & Submit</button>
+        </div>
+    </form>
+</div>
+
+<template id="partRowTemplate">
+<tr class="part-row">
+    <td>
+        <input type="hidden" name="Input.Parts[__index__].Id" value="0" />
+        <select name="Input.Parts[__index__].ChangeType">
+            <option value="">-- Chọn --</option>
+            @foreach (var ct in Model.ChangeTypes)
+            {
+                <option value="@ct.Name">@ct.Name</option>
+            }
+        </select>
+    </td>
+    <td><input name="Input.Parts[__index__].PartNumber" /></td>
+    <td><input name="Input.Parts[__index__].PartName" /></td>
+    <td><input name="Input.Parts[__index__].KPC" /></td>
+    <td><input name="Input.Parts[__index__].Quantity" /></td>
+    <td><input name="Input.Parts[__index__].ReplacedBy" /></td>
+    <td><button class="dcr-icon-btn remove-part" type="button" title="Xóa dòng">×</button></td>
+</tr>
+</template>
+
+<template id="attachmentRowTemplate">
+    <div class="dcr-attachment-row">
+        <label>
+            <span>Loại tài liệu</span>
+            <select name="AttachmentRows[__index__].AttachmentType">
+                @foreach (var type in Model.AttachmentTypeOptions)
+                {
+                    if (type.Value == "SupportingDocument")
+                    {
+                        <option value="@type.Value" selected>@type.DisplayName</option>
+                    }
+                    else
+                    {
+                        <option value="@type.Value">@type.DisplayName</option>
+                    }
+                }
+            </select>
+        </label>
+        <label>
+            <span>Tệp đính kèm</span>
+            <input type="file" name="AttachmentRows[__index__].File" />
+        </label>
+        <button class="dcr-icon-btn remove-attachment" type="button" title="Xóa dòng tài liệu">×</button>
+    </div>
+</template>
+
+@section Scripts {
+<script>
+(function () {
+    const body = document.getElementById('partsBody');
+    const template = document.getElementById('partRowTemplate');
+
+    function renumber() {
+        body.querySelectorAll('.part-row').forEach((row, i) => {
+            row.querySelectorAll('[name]').forEach(el => {
+                el.name = el.name.replace(/Input\.Parts\[\d+\]/g, `Input.Parts[${i}]`);
+            });
+        });
+    }
+
+    function wireRemove() {
+        body.querySelectorAll('.remove-part').forEach(btn => {
+            btn.onclick = () => {
+                const rows = body.querySelectorAll('.part-row');
+                if (rows.length <= 1) {
+                    rows[0].querySelectorAll('input').forEach(x => { if (x.type !== 'hidden') x.value = ''; });
+                    rows[0].querySelectorAll('select').forEach(x => x.selectedIndex = 0);
+                    return;
+                }
+                btn.closest('tr').remove();
+                renumber();
+            };
+        });
+    }
+
+    document.getElementById('addPartButton').addEventListener('click', () => {
+        const index = body.querySelectorAll('.part-row').length;
+        body.insertAdjacentHTML('beforeend', template.innerHTML.replaceAll('__index__', index));
+        wireRemove();
+    });
+
+    wireRemove();
+
+    const attachmentBody = document.getElementById('attachmentRows');
+    const attachmentTemplate = document.getElementById('attachmentRowTemplate');
+
+    function renumberAttachments() {
+        attachmentBody.querySelectorAll('.dcr-attachment-row').forEach((row, i) => {
+            row.querySelectorAll('[name]').forEach(el => {
+                el.name = el.name.replace(/AttachmentRows\[\d+\]/g, `AttachmentRows[${i}]`);
+            });
+        });
+    }
+
+    function wireAttachmentRemove() {
+        attachmentBody.querySelectorAll('.remove-attachment').forEach(btn => {
+            btn.onclick = () => {
+                const rows = attachmentBody.querySelectorAll('.dcr-attachment-row');
+                if (rows.length <= 1) {
+                    rows[0].querySelector('input[type=file]').value = '';
+                    rows[0].querySelector('select').value = 'SupportingDocument';
+                    return;
+                }
+                btn.closest('.dcr-attachment-row').remove();
+                renumberAttachments();
+            };
+        });
+    }
+
+    document.getElementById('addAttachmentButton').addEventListener('click', () => {
+        const index = attachmentBody.querySelectorAll('.dcr-attachment-row').length;
+        attachmentBody.insertAdjacentHTML('beforeend', attachmentTemplate.innerHTML.replaceAll('__index__', index));
+        wireAttachmentRemove();
+    });
+
+    wireAttachmentRemove();
+
+    let planRows = @Html.Raw(JsonSerializer.Serialize(Model.Input.ApprovalPlan, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+    let templates = @Html.Raw(JsonSerializer.Serialize(Model.ApprovalTemplates, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+    let approvers = [];
+    const planBody = document.getElementById('approvalPlanBody');
+    const templateSelect = document.getElementById('approvalTemplate');
+    const resultSelect = document.getElementById('approverResults');
+    const rankSelect = document.getElementById('dcrRank');
+    const levelInput = document.getElementById('approvalLevel');
+    const levelNameInput = document.getElementById('approvalLevelName');
+    const approversUrl = '@(Url.Page("/Dcr/Edit", "Approvers") ?? "/Edit?handler=Approvers")';
+    const templatesUrl = '@(Url.Page("/Dcr/Edit", "Templates") ?? "/Edit?handler=Templates")';
+
+    function esc(value) {
+        return String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[ch]);
+    }
+    function hidden(i, name, value) {
+        return `<input type="hidden" name="Input.ApprovalPlan[${i}].${name}" value="${esc(value)}" />`;
+    }
+    function normalizePlan() {
+        planRows.sort((a, b) => (a.levelNumber - b.levelNumber) || (a.sequence - b.sequence) || (a.approverId - b.approverId));
+        const counters = {};
+        planRows.forEach(row => row.sequence = counters[row.levelNumber] = (counters[row.levelNumber] || 0) + 1);
+    }
+    function renderPlan() {
+        normalizePlan();
+        planBody.innerHTML = planRows.map((row, i) => `<tr>
+            <td>${esc(row.levelNumber)}</td><td>${esc(row.levelName)}</td><td><strong>${esc(row.approverName)}</strong></td>
+            <td>${esc(row.approverEmail)}</td><td>${esc(row.approverRole)}</td>
+            <td>${esc(row.businessUnitName)}${row.departmentName ? ' / ' + esc(row.departmentName) : ''}</td>
+            <td>${hidden(i,'Id',row.id || 0)}${hidden(i,'LevelNumber',row.levelNumber)}${hidden(i,'LevelName',row.levelName)}
+                ${hidden(i,'ApproverId',row.approverId)}${hidden(i,'ApproverName',row.approverName)}${hidden(i,'ApproverEmail',row.approverEmail)}
+                ${hidden(i,'ApproverRole',row.approverRole)}${hidden(i,'BusinessUnitId',row.businessUnitId ?? '')}${hidden(i,'BusinessUnitCode',row.businessUnitCode)}
+                ${hidden(i,'BusinessUnitName',row.businessUnitName)}${hidden(i,'DepartmentId',row.departmentId ?? '')}${hidden(i,'DepartmentCode',row.departmentCode)}
+                ${hidden(i,'DepartmentName',row.departmentName)}${hidden(i,'Sequence',row.sequence)}
+                <button type="button" class="dcr-icon-btn remove-approver" data-index="${i}" title="Xóa dòng">×</button></td>
+        </tr>`).join('');
+        planBody.querySelectorAll('.remove-approver').forEach(btn => btn.onclick = () => {
+            planRows.splice(Number(btn.dataset.index), 1);
+            renderPlan();
+        });
+    }
+    function renderTemplates() {
+        templateSelect.innerHTML = templates.length
+            ? templates.map((x, i) => `<option value="${i}">Rank ${esc(x.rank)} - ${esc(x.name)}${x.isDefault ? ' (Mặc định)' : ''}</option>`).join('')
+            : '<option value="">-- Chưa có cấu hình cho Rank này --</option>';
+        const preferred = templates.findIndex(x => x.isDefault);
+        if (preferred >= 0) templateSelect.value = String(preferred);
+    }
+    function applySelectedTemplate(confirmReplace) {
+        const selected = templates[Number(templateSelect.value)];
+        if (!selected) return;
+        if (confirmReplace && planRows.length && !confirm(`Thay line hiện tại bằng cấu hình '${selected.name}' của Rank ${selected.rank}?`)) return;
+        planRows = (selected.approvalPlan || []).map(x => ({ ...x, id:0 }));
+        renderPlan();
+    }
+
+    document.getElementById('loadApprovalTemplate').onclick = () => applySelectedTemplate(true);
+    rankSelect.onchange = async () => {
+        try {
+            const response = await fetch(`${templatesUrl}&rank=${encodeURIComponent(rankSelect.value)}`);
+            if (!response.ok) throw new Error(await response.text());
+            templates = await response.json();
+            renderTemplates();
+            if (templates.length && (!planRows.length || confirm(`Rank đã đổi. Nạp cấu hình mặc định của Rank ${rankSelect.value}?`))) applySelectedTemplate(false);
+        } catch (error) { alert('Không tải được cấu hình theo Rank: ' + error.message); }
+    };
+
+    async function searchApprovers() {
+        try {
+            const q = document.getElementById('approverSearch').value;
+            const response = await fetch(`${approversUrl}&q=${encodeURIComponent(q)}`);
+            if (!response.ok) throw new Error(await response.text());
+            approvers = await response.json();
+            resultSelect.innerHTML = approvers.length
+                ? approvers.map((x, i) => `<option value="${i}">${esc(x.fullName)} | ${esc(x.email)} | ${esc(x.department || x.businessUnit)} | ${esc(x.role)}</option>`).join('')
+                : '<option value="">Không tìm thấy người dùng</option>';
+        } catch (error) { alert('Không tìm được người duyệt: ' + error.message); }
+    }
+    document.getElementById('searchApprover').onclick = searchApprovers;
+    document.getElementById('approverSearch').onkeydown = event => {
+        if (event.key === 'Enter') { event.preventDefault(); searchApprovers(); }
+    };
+    levelInput.onchange = () => {
+        const level = Number(levelInput.value || 1);
+        levelNameInput.value = planRows.find(x => x.levelNumber === level)?.levelName || `Cấp phê duyệt ${level}`;
+    };
+    document.getElementById('nextApprovalLevel').onclick = () => {
+        levelInput.value = String(Math.max(0, ...planRows.map(x => x.levelNumber)) + 1);
+        levelInput.onchange();
+    };
+    document.getElementById('addApprover').onclick = () => {
+        const user = approvers[Number(resultSelect.value)];
+        if (!user) return alert('Hãy tìm và chọn người phê duyệt.');
+        if (planRows.some(x => x.approverId === user.userId)) return alert('Người này đã có trong line phê duyệt.');
+        const level = Math.max(1, Number(levelInput.value || 1));
+        const levelName = levelNameInput.value.trim() || `Cấp phê duyệt ${level}`;
+        planRows.filter(x => x.levelNumber === level).forEach(x => x.levelName = levelName);
+        planRows.push({ id:0, levelNumber:level, levelName, approverId:user.userId, approverName:user.fullName,
+            approverEmail:user.email, approverRole:user.role, businessUnitId:user.businessUnitId,
+            businessUnitCode:user.businessUnitCode, businessUnitName:user.businessUnit,
+            departmentId:user.departmentId, departmentCode:user.departmentCode, departmentName:user.department, sequence:99 });
+        renderPlan();
+    };
+
+    renderTemplates();
+    renderPlan();
+})();
+</script>
+}

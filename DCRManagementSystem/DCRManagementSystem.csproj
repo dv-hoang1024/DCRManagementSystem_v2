@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\DcrApp.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.29" />
+    <PackageReference Include="Microsoft.Graph" Version="6.5.0" />
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="8.0.0" />
+    <PackageReference Include="QuestPDF" Version="2024.7.3" />
+    <PackageReference Include="Polly" Version="8.7.0" />
+    <PackageReference Include="ClosedXML" Version="0.105.1" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.87.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4078.44" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\DcrLogo.png" LogicalName="DCRManagementSystem.Assets.DcrLogo.png" />
+    <EmbeddedResource Include="Assets\DcrApp.ico" LogicalName="DCRManagementSystem.Assets.DcrApp.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Rollback safety: ignore stale file left by later Graph Application mail experiments. -->
+    <Compile Remove="Services\GraphApplicationMailService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+
+  <PropertyGroup>
+    <!-- RemoteApi client publish must not carry the server approval key/database configuration.
+         Set /p:DcrProvisionDirectSqlRuntime=true only when intentionally publishing a DirectSql/server utility build. -->
+    <DcrProvisionDirectSqlRuntime Condition="'$(DcrProvisionDirectSqlRuntime)' == ''">false</DcrProvisionDirectSqlRuntime>
+    <DcrPersistentDataRoot Condition="'$(DcrPersistentDataRoot)' == ''">$(LOCALAPPDATA)\DCRManagementSystem</DcrPersistentDataRoot>
+    <DcrSigningKeySource Condition="Exists('$(DcrPersistentDataRoot)\Data\Security\approval-signing.key')">$(DcrPersistentDataRoot)\Data\Security\approval-signing.key</DcrSigningKeySource>
+    <DcrSigningKeySource Condition="'$(DcrSigningKeySource)' == '' and Exists('$(MSBuildProjectDirectory)\bin\Debug\net8.0-windows\Data\Security\approval-signing.key')">$(MSBuildProjectDirectory)\bin\Debug\net8.0-windows\Data\Security\approval-signing.key</DcrSigningKeySource>
+    <DcrDatabaseConfigSource Condition="Exists('$(DcrPersistentDataRoot)\Data\Config\database.config.json')">$(DcrPersistentDataRoot)\Data\Config\database.config.json</DcrDatabaseConfigSource>
+    <DcrDatabaseConfigSource Condition="'$(DcrDatabaseConfigSource)' == '' and Exists('$(MSBuildProjectDirectory)\bin\Debug\net8.0-windows\Data\Config\database.config.json')">$(MSBuildProjectDirectory)\bin\Debug\net8.0-windows\Data\Config\database.config.json</DcrDatabaseConfigSource>
+  </PropertyGroup>
+
+  <Target Name="ProvisionDcrRuntimeData" AfterTargets="Publish" Condition="'$(DcrProvisionDirectSqlRuntime)' == 'true'">
+    <Error Condition="'$(DcrSigningKeySource)' == '' or !Exists('$(DcrSigningKeySource)')" Text="Không tìm thấy approval-signing.key đang dùng. Hãy chạy Debug thành công một lần hoặc dùng Scripts\Publish-DCR.cmd." />
+    <MakeDir Directories="$(PublishDir)Provisioning" />
+    <Copy SourceFiles="$(DcrSigningKeySource)" DestinationFiles="$(PublishDir)Provisioning\approval-signing.key" />
+    <Copy Condition="'$(DcrDatabaseConfigSource)' != '' and Exists('$(DcrDatabaseConfigSource)')" SourceFiles="$(DcrDatabaseConfigSource)" DestinationFiles="$(PublishDir)Provisioning\database.config.json" />
+  </Target>
+</Project>

@@ -1,0 +1,10 @@
+.vs/
+bin/
+obj/
+publish/
+*.user
+*.suo
+*.db
+DCRManagementSystem/Data/Attachments/
+DCRManagementSystem/Data/ApprovedPdf/
+DCRManagementSystem/Data/Security/

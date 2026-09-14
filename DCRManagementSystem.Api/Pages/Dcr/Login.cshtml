@@ -1,0 +1,60 @@
+﻿@page "/Login"
+@model DCRManagementSystem.Api.Pages.Dcr.LoginModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "DCR - Đăng nhập";
+}
+
+<div class="dcr-page dcr-login-page">
+    <div class="dcr-login-card">
+        <div class="dcr-login-brand">
+            <div class="dcr-mark">DCR</div>
+            <div>
+                <h1>DCR Web Portal</h1>
+                <p>Tạo, theo dõi và phê duyệt DCR trên máy tính hoặc điện thoại.</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.PortalError))
+        {
+            <div class="dcr-alert dcr-alert--danger">@Model.PortalError</div>
+        }
+        else if (!Model.PortalEnabled)
+        {
+            <div class="dcr-alert dcr-alert--warning">
+                DCR Web Portal đang được Administrator tắt trong <strong>Thiết lập hệ thống</strong> của DCR Management System.
+            </div>
+            <a class="dcr-btn dcr-btn--secondary" href="https://ggpcontrol.cloud/Dashboard">← Quay lại Production Dashboard</a>
+        }
+        else
+        {
+            @if (!string.IsNullOrWhiteSpace(Model.Message))
+            {
+                <div class="dcr-alert dcr-alert--success">@Model.Message</div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+            {
+                <div class="dcr-alert dcr-alert--danger">@Model.ErrorMessage</div>
+            }
+
+            <form method="post" class="dcr-form">
+                <input type="hidden" asp-for="ReturnUrl" />
+                <label>
+                    <span>Username</span>
+                    <input asp-for="Username" autocomplete="username" autofocus />
+                </label>
+                <label>
+                    <span>Password</span>
+                    <input asp-for="Password" type="password" autocomplete="current-password" />
+                </label>
+                <button class="dcr-btn dcr-btn--primary dcr-btn--wide" type="submit">Đăng nhập DCR</button>
+            </form>
+
+            <div class="dcr-login-help">
+                <strong>Lưu ý:</strong> Web Portal dùng Username/Password DCR hoặc LDAP theo cấu hình hiện tại.
+                Windows Integrated login của WinForms không được truyền tự động qua Internet.
+            </div>
+            <a class="dcr-link" href="https://ggpcontrol.cloud/Dashboard">← Production Dashboard</a>
+        }
+    </div>
+</div>

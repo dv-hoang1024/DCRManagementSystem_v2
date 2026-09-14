@@ -1,0 +1,24 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DCRManagementSystem", "DCRManagementSystem\DCRManagementSystem.csproj", "{B4D4DA2C-8870-4F11-BD52-EF7DE8BE72A4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DCRManagementSystem.Api", "DCRManagementSystem.Api\DCRManagementSystem.Api.csproj", "{F24A36B7-629B-4D50-A691-8F5B79D76F0A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B4D4DA2C-8870-4F11-BD52-EF7DE8BE72A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4D4DA2C-8870-4F11-BD52-EF7DE8BE72A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4D4DA2C-8870-4F11-BD52-EF7DE8BE72A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4D4DA2C-8870-4F11-BD52-EF7DE8BE72A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F24A36B7-629B-4D50-A691-8F5B79D76F0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F24A36B7-629B-4D50-A691-8F5B79D76F0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F24A36B7-629B-4D50-A691-8F5B79D76F0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F24A36B7-629B-4D50-A691-8F5B79D76F0A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

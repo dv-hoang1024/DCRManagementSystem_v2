@@ -1,0 +1,101 @@
+﻿@page "/"
+@model DCRManagementSystem.Api.Pages.Dcr.IndexModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "DCR Web Portal";
+}
+
+<div class="dcr-page">
+    <header class="dcr-topbar">
+        <div>
+            <div class="dcr-eyebrow">GGP CONTROL</div>
+            <h1>DCR Web Portal</h1>
+            <p>Temporary Deviation Change Request / Order</p>
+        </div>
+        <div class="dcr-topbar-actions">
+            <a class="dcr-btn dcr-btn--secondary" href="https://ggpcontrol.cloud/Dashboard">🏭 Production Dashboard</a>
+            @if (Model.Portal.AllowCreate)
+            {
+                <a class="dcr-btn dcr-btn--primary" href="/Edit">+ Tạo DCR</a>
+            }
+            <div class="dcr-user">
+                <strong>@Model.CurrentUser?.FullName</strong>
+                <span>@Model.CurrentUser?.Role</span>
+            </div>
+            <a class="dcr-btn dcr-btn--ghost" href="/ChangePassword">Đổi mật khẩu</a>
+            <a class="dcr-btn dcr-btn--ghost" href="/Logout">Đăng xuất</a>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="dcr-alert dcr-alert--info">@Model.Message</div>
+    }
+
+    <section class="dcr-toolbar">
+        <nav class="dcr-tabs">
+            @foreach (var tab in Model.Tabs)
+            {
+                <a class="dcr-tab @(Model.Scope == tab.Value ? "is-active" : "")"
+                   asp-page="/Dcr/Index" asp-route-scope="@tab.Value" asp-route-search="@Model.Search">@tab.Label</a>
+            }
+        </nav>
+        <form method="get" class="dcr-search">
+            <input type="hidden" name="scope" value="@Model.Scope" />
+            <input type="search" name="search" value="@Model.Search" placeholder="Mã DCR, tiêu đề, dòng sản phẩm..." />
+            <button class="dcr-btn dcr-btn--secondary" type="submit">Tìm</button>
+        </form>
+    </section>
+
+    <section class="dcr-panel">
+        <div class="dcr-panel-title">
+            <span>@Model.CurrentTabLabel</span>
+            <span class="dcr-count">@Model.Items.Count DCR</span>
+        </div>
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="dcr-empty">
+                <div class="dcr-empty-icon">✓</div>
+                <strong>Không có DCR phù hợp</strong>
+                <span>Thử chọn danh sách khác hoặc thay đổi từ khóa tìm kiếm.</span>
+            </div>
+        }
+        else
+        {
+            <div class="dcr-table-wrap">
+                <table class="dcr-table">
+                    <thead>
+                        <tr>
+                            <th>DCR No.</th>
+                            <th>Tiêu đề</th>
+                            <th>Dòng SP</th>
+                            <th>Phòng ban</th>
+                            <th>Người tạo</th>
+                            <th>Cấp</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td><a class="dcr-number" href="/Request/@item.Id">@item.DCRNumber</a></td>
+                            <td class="dcr-title-cell">@item.Title</td>
+                            <td>@item.Program</td>
+                            <td>@item.Department</td>
+                            <td>@item.Owner</td>
+                            <td>@item.CurrentStage</td>
+                            <td><span class="dcr-status dcr-status--@Model.StatusCss(item.Status)">@Model.StatusText(item.Status)</span></td>
+                            <td>@item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><a class="dcr-mini-btn" href="/Request/@item.Id">Mở</a></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

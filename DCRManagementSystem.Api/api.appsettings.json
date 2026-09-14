@@ -1,0 +1,118 @@
+{
+  "DataAccessMode": "DirectSql",
+  "ConnectionString": "",
+  "Database": {
+    "ServerAddress": "172.168.8.183",
+    "Port": 3333,
+    "DatabaseName": "DCRManagement",
+    "AuthenticationMode": "SqlServer",
+    "Username": "",
+    "Password": "",
+    "Encrypt": true,
+    "TrustServerCertificate": true,
+    "ConnectTimeoutSeconds": 10,
+    "CommandTimeoutSeconds": 30,
+    "MinPoolSize": 4,
+    "MaxPoolSize": 64
+  },
+  "StorageRoot": "Data\\Attachments",
+  "ApprovedPdfRoot": "Data\\ApprovedPdf",
+  "DcrNumberPrefix": "DCR",
+  "ApplicationLinkTemplate": "dcr://request/{0}",
+  "Storage": {
+    "UseNetworkShare": true,
+    "FallbackToLocalStorageWhenNetworkShareUnavailable": true,
+    "ServerAddress": "172.168.8.209",
+    "ShareName": "AutoUpdate",
+    "RootSubfolder": "DCR",
+    "CompressLargeTechnicalFiles": true,
+    "CompressionThresholdMb": 50,
+    "CompressionExtensions": ".step;.stp;.stpz;.iges;.igs;.dwg;.dxf;.sldprt;.sldasm;.catpart;.catproduct;.prt;.asm;.x_t;.x_b;.raw;.tif;.tiff"
+  },
+  "Authentication": {
+    "Mode": "WindowsPreferred",
+    "AutoLoginWindows": true,
+    "AllowLocalFallback": true,
+    "AllowUsernameMatchForWindows": false,
+    "AllowedWindowsDomain": "",
+    "UseWindowsSessionForApproval": true,
+    "Ldap": {
+      "Enabled": false,
+      "Host": "",
+      "Port": 389,
+      "UseSsl": false,
+      "Domain": ""
+    }
+  },
+  "Email": {
+    "Enabled": false,
+    "AuthenticationMode": "MicrosoftGraphDelegated",
+    "TenantId": "organizations",
+    "ClientId": "",
+    "AccountHint": "",
+    "SmtpHost": "smtp.office365.com",
+    "SmtpPort": 587,
+    "EnableSsl": true,
+    "Username": "",
+    "Password": "",
+    "FromAddress": "",
+    "FromName": "DCR Management System"
+  },
+  "Teams": {
+    "Enabled": false,
+    "WebhookUrl": ""
+  },
+  "Reminder": {
+    "Enabled": true,
+    "ApprovalDueHours": 24,
+    "ReminderRepeatHours": 24,
+    "EscalationHours": 48,
+    "EscalationEmail": ""
+  },
+  "Security": {
+    "ApprovalSigningKeyBase64": "",
+    "ApprovalSigningKeyFile": "Data\\Security\\approval-signing.key",
+    "RequirePasswordReauthenticationForDecision": true
+  },
+  "ApiServer": {
+    "AccessTokenHours": 8,
+    "RefreshTokenDays": 30,
+    "DecisionProofMinutes": 5,
+    "MaxConcurrentRequests": 32,
+    "RequestQueueLimit": 160,
+    "RequestQueueTimeoutSeconds": 20,
+    "UserSessionCacheSeconds": 30,
+    "ReferenceCacheSeconds": 60
+  },
+  "Kestrel": {
+    "Endpoints": {
+      "Http": {
+        "Url": "http://0.0.0.0:5080"
+      }
+    }
+  },
+  "ApiTray": {
+    "Enabled": true,
+    "ShowStartupBalloon": true
+  },
+  "CloudflareTunnel": {
+    "Enabled": true,
+    "AutoStart": true,
+    "StopWithApi": true,
+    "TunnelName": "dcr-tunnel",
+    "TunnelId": "",
+    "DnsHostname": "dcr.ggpcontrol.cloud",
+    "ExecutablePath": "C:\\Cloudflare\\cloudflared.exe",
+    "WorkingDirectory": "C:\\Cloudflare",
+    "ConfigPath": "%USERPROFILE%\\.cloudflared\\dcr-config.yml",
+    "PreferManualCompatibleCommand": false,
+    "EnableDnsRouteRepairAction": true,
+    "RemoteApiUrl": "https://dcr.ggpcontrol.cloud",
+    "MonitorIntervalSeconds": 15,
+    "StartupValidationMilliseconds": 1800
+  },
+  "DcrWebPortal": {
+    "ApiBaseUrl": "http://127.0.0.1:5080",
+    "TimeoutSeconds": 600
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "DCRManagementSystem.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:64455;http://localhost:64456"
+    }
+  }
+}

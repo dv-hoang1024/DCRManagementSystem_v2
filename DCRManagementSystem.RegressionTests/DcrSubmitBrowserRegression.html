@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>DCR submit browser regression</title>
+<form data-dcr-submit-once>
+    <input name="Input.CreationToken" value="a4d55313-43a5-4852-a25c-d4f7318c4d0e">
+    <button type="submit" name="Action" value="save" id="save">Save</button>
+    <button type="submit" name="Action" value="submit" id="submit">Submit</button>
+    <button type="submit" disabled id="unavailable">Unavailable</button>
+</form>
+<pre id="result">RUNNING</pre>
+<script src="../../WebDashboard/wwwroot/js/dcr-submit.js"></script>
+<script>
+window.addEventListener('load', () => setTimeout(() => {
+    const result = document.getElementById('result');
+    const form = document.querySelector('form');
+    const submit = document.getElementById('submit');
+    const save = document.getElementById('save');
+    const unavailable = document.getElementById('unavailable');
+    let checks = 0;
+    const check = (condition, message) => {
+        if (!condition) throw new Error(message);
+        checks++;
+    };
+    try {
+        const invalid = new SubmitEvent('submit', { cancelable: true, submitter: submit });
+        invalid.preventDefault();
+        form.dispatchEvent(invalid);
+        check(!submit.disabled, 'Previously cancelled submission must not lock buttons');
+
+        const first = new SubmitEvent('submit', { cancelable: true, submitter: submit });
+        check(form.dispatchEvent(first), 'First submission must proceed');
+        check(submit.disabled && save.disabled, 'Both actions must lock immediately');
+        check(new FormData(form).get('Action') === 'submit', 'Submit action must survive disabled submitter');
+        check(new FormData(form).getAll('Action').length === 1, 'POST must contain exactly one action');
+        check(new FormData(form).get('Input.CreationToken') === 'a4d55313-43a5-4852-a25c-d4f7318c4d0e', 'Creation identity must survive');
+        const duplicate = new SubmitEvent('submit', { cancelable: true, submitter: submit });
+        check(!form.dispatchEvent(duplicate), 'Rapid duplicate must be prevented');
+
+        window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+        check(!submit.disabled && !save.disabled, 'Back navigation must restore actions');
+        check(unavailable.disabled, 'Previously disabled actions must stay disabled');
+        check(new FormData(form).getAll('Action').length === 0, 'Back navigation must remove old action');
+        check(form.dispatchEvent(new SubmitEvent('submit', { cancelable: true, submitter: save })), 'Save after Back must proceed');
+        check(new FormData(form).get('Action') === 'save', 'Save must remain Save, not Submit');
+
+        window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+        check(form.dispatchEvent(new SubmitEvent('submit', { cancelable: true })), 'Submission without a named button must proceed');
+        check(new FormData(form).getAll('Action').length === 0, 'Unnamed submission must not add an action');
+        result.textContent = `PASS: ${checks} browser checks`;
+    } catch (error) {
+        result.textContent = `FAIL: ${error.message}`;
+    }
+}, 100));
+</script>
+</html>

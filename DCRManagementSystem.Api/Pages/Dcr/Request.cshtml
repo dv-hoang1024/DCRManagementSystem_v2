@@ -1,0 +1,269 @@
+﻿@page "/Request/{id:int}"
+@model DCRManagementSystem.Api.Pages.Dcr.RequestModel
+@using DCRManagementSystem.Api.WebPortal.Models
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = Model.Dcr?.DCRNumber ?? "DCR";
+}
+
+<div class="dcr-page">
+    <header class="dcr-topbar">
+        <div>
+            <div class="dcr-eyebrow">DCR WEB PORTAL</div>
+            <h1>@(string.IsNullOrWhiteSpace(Model.Dcr?.DCRNumber) ? "DCR" : Model.Dcr.DCRNumber)</h1>
+            <p>@Model.Dcr?.Title</p>
+        </div>
+        <div class="dcr-topbar-actions">
+            <a class="dcr-btn dcr-btn--secondary" href="/">← Danh sách</a>
+            @if (Model.CanEdit)
+            {
+                <a class="dcr-btn dcr-btn--primary" href="/Edit/@Model.Id">Sửa DCR</a>
+            }
+            @if (Model.CanDelete)
+            {
+                <a class="dcr-btn dcr-btn--danger" href="#delete-dcr">Xóa DCR</a>
+            }
+            <a class="dcr-btn dcr-btn--ghost" href="/ChangePassword">Đổi mật khẩu</a>
+            <a class="dcr-btn dcr-btn--ghost" href="/Logout">Đăng xuất</a>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="dcr-alert dcr-alert--info">@Model.Message</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="dcr-alert dcr-alert--danger">@Model.ErrorMessage</div>
+    }
+
+    @if (Model.Dcr is not null)
+    {
+        <section class="dcr-summary-grid">
+            <div class="dcr-summary-card">
+                <span>Trạng thái</span>
+                <strong class="dcr-status dcr-status--@Model.StatusCss(Model.Dcr.Status)">@Model.StatusText(Model.Dcr.Status)</strong>
+            </div>
+            <div class="dcr-summary-card"><span>Revision</span><strong>R@Model.Dcr.RevisionNo</strong></div>
+            <div class="dcr-summary-card"><span>Cấp hiện tại</span><strong>@Model.Dcr.CurrentStage</strong></div>
+            <div class="dcr-summary-card"><span>Người tạo</span><strong>@Model.Dcr.RequestOwnerName</strong></div>
+            <div class="dcr-summary-card"><span>Dòng sản phẩm</span><strong>@Model.Dcr.Program</strong></div>
+            <div class="dcr-summary-card"><span>Build Stage</span><strong>@Model.Dcr.BuildStage</strong></div>
+        </section>
+
+        @if (Model.CanApprove && Model.Portal.AllowApproval)
+        {
+            <section class="dcr-panel dcr-decision-panel">
+                <div class="dcr-panel-title"><span>Phê duyệt DCR</span><span>Web Approval</span></div>
+                <form method="post" asp-page-handler="Decision" class="dcr-decision-form">
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <input type="hidden" name="RowVersionBase64" value="@Convert.ToBase64String(Model.Dcr.RowVersion)" />
+                    <label class="dcr-grow">
+                        <span>Comment / Lý do</span>
+                        <textarea name="Comment" rows="3" placeholder="Approve có thể để trống; Reject/Request Info bắt buộc nhập lý do."></textarea>
+                    </label>
+                    <div class="dcr-decision-buttons">
+                        <button class="dcr-btn dcr-btn--success" type="submit" name="Decision" value="Approved">✓ Approve</button>
+                        <button class="dcr-btn dcr-btn--warning" type="submit" name="Decision" value="Returned">↩ Request Info</button>
+                        <button class="dcr-btn dcr-btn--danger" type="submit" name="Decision" value="Rejected">✕ Reject</button>
+                    </div>
+                </form>
+            </section>
+        }
+
+        @if (Model.CanSubmit)
+        {
+            <section class="dcr-panel">
+                <div class="dcr-panel-title"><span>Chỉnh sửa & gửi duyệt</span><span>R@Model.Dcr.RevisionNo</span></div>
+                <div class="dcr-panel-body dcr-inline-actions">
+                    <a class="dcr-btn dcr-btn--primary" href="/Edit/@Model.Id">Tiếp tục chỉnh sửa</a>
+                    <form method="post" asp-page-handler="Submit" data-dcr-submit-once>
+                        <input type="hidden" name="Id" value="@Model.Id" />
+                        <input type="hidden" name="RowVersionBase64" value="@Convert.ToBase64String(Model.Dcr.RowVersion)" />
+                        <button class="dcr-btn dcr-btn--success" type="submit">Submit phê duyệt</button>
+                    </form>
+                </div>
+            </section>
+        }
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>1. Thông tin chung</span><span>@Model.Dcr.CreatedDate.ToString("dd/MM/yyyy HH:mm")</span></div>
+            <div class="dcr-panel-body dcr-detail-grid">
+                <div><span>Phòng ban yêu cầu</span><strong>@Model.DepartmentName(Model.Dcr.RequestingDepartmentId)</strong></div>
+                <div><span>Nhóm Module</span><strong>@Model.Dcr.ModuleGroup</strong></div>
+                <div><span>Email</span><strong>@Model.Dcr.RequestOwnerEmail</strong></div>
+                <div><span>Điện thoại</span><strong>@Model.Dcr.RequestOwnerPhone</strong></div>
+                <div><span>ECR</span><strong>@Model.Dcr.RelatedECR</strong></div>
+                <div><span>PPS</span><strong>@Model.Dcr.RelatedPPS</strong></div>
+                <div><span>ECN</span><strong>@Model.Dcr.RelatedECN</strong></div>
+                <div><span>MCN</span><strong>@Model.Dcr.RelatedMCN</strong></div>
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>2. Linh kiện thay đổi</span><span>@Model.Dcr.Parts.Count dòng</span></div>
+            <div class="dcr-table-wrap">
+                <table class="dcr-table">
+                    <thead><tr><th>Change</th><th>Part Number</th><th>Part Name</th><th>KPC</th><th>Quantity</th><th>Replaced By</th></tr></thead>
+                    <tbody>
+                    @foreach (var part in Model.Dcr.Parts.OrderBy(x => x.SortOrder))
+                    {
+                        <tr>
+                            <td>@part.ChangeType</td><td>@part.PartNumber</td><td>@part.PartName</td>
+                            <td>@part.KPC</td><td>@part.Quantity</td><td>@part.ReplacedBy</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>3. Vấn đề / Giải pháp</span></div>
+            <div class="dcr-panel-body">
+                <div class="dcr-text-block"><span>Problem Description</span><p>@Model.Dcr.ProblemDescription</p></div>
+                <div class="dcr-text-block"><span>Solution</span><p>@Model.Dcr.Solution</p></div>
+                <div class="dcr-detail-grid">
+                    <div><span>Material Change</span><strong>@Model.Dcr.MaterialChangeDescription</strong></div>
+                    <div><span>Form / Fit / Function</span><strong>@Model.Dcr.FormFitFunctionDetail</strong></div>
+                    <div><span>Retrofit Volume</span><strong>@Model.Dcr.RetrofitVolume</strong></div>
+                    <div><span>Retrofit Instruction</span><strong>@Model.Dcr.RetrofitInstruction</strong></div>
+                </div>
+                <div class="dcr-chip-list">
+                    @foreach (var impacted in Model.Dcr.ImpactedDepartments)
+                    {
+                        <span class="dcr-chip">@Model.DepartmentName(impacted.DepartmentId)@(impacted.EstimatedCost.HasValue ? $" · {impacted.EstimatedCost:N0}" : "")</span>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>4. Kế hoạch / Tracking</span></div>
+            <div class="dcr-panel-body dcr-detail-grid">
+                <div><span>Material identification</span><strong>@(Model.Dcr.MaterialIdentificationRequired ? "Có" : "Không")</strong></div>
+                <div><span>Material usage station</span><strong>@Model.Dcr.MaterialUsageStation</strong></div>
+                <div><span>Supplier supports MRD</span><strong>@(Model.Dcr.SupplierSupportsMRD ? "Có" : "Không")</strong></div>
+                <div><span>Expected Arrival</span><strong>@Model.FormatDate(Model.Dcr.ExpectedArrivalDate)</strong></div>
+                <div><span>Temporary process</span><strong>@(Model.Dcr.TemporaryProcessRequired ? "Có" : "Không")</strong></div>
+                <div><span>Rework required</span><strong>@(Model.Dcr.ReworkRequired ? "Có" : "Không")</strong></div>
+                <div><span>Planned Start</span><strong>@Model.FormatDate(Model.Dcr.PlannedStartDate)</strong></div>
+                <div><span>Planned End</span><strong>@Model.FormatDate(Model.Dcr.PlannedEndDate)</strong></div>
+                <div><span>Production Order</span><strong>@Model.Dcr.ProductionOrderNumber</strong></div>
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>5. Approval Plan</span><span>@Model.Dcr.ApprovalPlan.Count approver</span></div>
+            <div class="dcr-table-wrap">
+                <table class="dcr-table">
+                    <thead><tr><th>Cấp</th><th>Tên cấp</th><th>Approver</th><th>Phòng ban</th><th>Email</th></tr></thead>
+                    <tbody>
+                    @foreach (var plan in Model.Dcr.ApprovalPlan.OrderBy(x => x.LevelNumber).ThenBy(x => x.Sequence))
+                    {
+                        <tr><td>@plan.LevelNumber</td><td>@plan.LevelName</td><td>@plan.ApproverName</td><td>@plan.DepartmentName</td><td>@plan.ApproverEmail</td></tr>
+                    }
+                    @if (Model.Dcr.ApprovalPlan.Count == 0)
+                    {
+                        <tr><td colspan="5" class="dcr-empty-cell">Sẽ dùng Approval Matrix mặc định khi Submit.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>Tài liệu đính kèm</span><span>@Model.Attachments.Count file</span></div>
+            <div class="dcr-panel-body">
+                @if (Model.CanEdit && Model.Portal.AllowCreate)
+                {
+                    <form method="post" enctype="multipart/form-data" asp-page-handler="Upload" class="dcr-upload-form">
+                        <input type="hidden" name="Id" value="@Model.Id" />
+                        <select name="AttachmentType" aria-label="Loại tài liệu đính kèm" required>
+                            @foreach (var type in Model.AttachmentTypeOptions)
+                            {
+                                if (type.Value == DcrAttachmentTypes.SupportingDocument)
+                                {
+                                    <option value="@type.Value" selected>@type.DisplayName</option>
+                                }
+                                else
+                                {
+                                    <option value="@type.Value">@type.DisplayName</option>
+                                }
+                            }
+                        </select>
+                        <input type="file" name="File" required />
+                        <button class="dcr-btn dcr-btn--secondary" type="submit">Upload</button>
+                    </form>
+                }
+                <div class="dcr-file-list">
+                    @foreach (var file in Model.Attachments)
+                    {
+                        <a class="dcr-file" asp-page="/Dcr/Request" asp-page-handler="Attachment" asp-route-id="@Model.Id" asp-route-attachmentId="@file.Id">
+                            <span>📎</span>
+                            <strong>@file.FileName</strong>
+                            <small title="@Model.AttachmentTypeNames(file.AttachmentType)">@Model.AttachmentTypeNames(file.AttachmentType) · @Model.FormatBytes(file.FileSize) · @file.UploadedBy</small>
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title">
+                <span>PDF</span>
+                <span class="dcr-inline-actions">
+                    <a class="dcr-mini-btn" asp-page="/Dcr/Request" asp-page-handler="Pdf" asp-route-id="@Model.Id">Preview / Export PDF</a>
+                    @if (Model.Dcr.FinalPdfGeneratedAt.HasValue)
+                    {
+                        <a class="dcr-mini-btn" asp-page="/Dcr/Request" asp-page-handler="FinalPdf" asp-route-id="@Model.Id">Final Approved PDF</a>
+                    }
+                </span>
+            </div>
+        </section>
+
+        <section class="dcr-panel">
+            <div class="dcr-panel-title"><span>Approval History</span><span>@Model.History.Count dòng</span></div>
+            <div class="dcr-table-wrap">
+                <table class="dcr-table">
+                    <thead><tr><th>Revision</th><th>Stage</th><th>Approver</th><th>Decision</th><th>Thời gian</th><th>Comment</th><th>Signature</th></tr></thead>
+                    <tbody>
+                    @foreach (var row in Model.History)
+                    {
+                        <tr>
+                            <td>R@row.RevisionNo</td><td>@row.StageName</td><td>@row.Approver</td>
+                            <td>@row.Decision</td><td>@Model.FormatDateTime(row.DecisionDate)</td>
+                            <td>@row.Comments</td><td>@row.SignatureStatus</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        @if (Model.CanDelete)
+        {
+            <section id="delete-dcr" class="dcr-panel dcr-danger-panel">
+                <div class="dcr-panel-title"><span>Xóa DCR</span><span>Không thể hoàn tác</span></div>
+                <div class="dcr-panel-body">
+                    <p>
+                        Administrator được xóa DCR ở mọi trạng thái. Người tạo được xóa DCR của mình khi ở trạng thái
+                        <strong>Bản nháp</strong>, <strong>Trả về</strong> hoặc <strong>Bị từ chối</strong>.
+                        File, tác vụ email và dữ liệu liên quan sẽ được dọn dẹp;
+                        hệ thống vẫn giữ snapshot trong nhật ký audit.
+                    </p>
+                    <form method="post" asp-page-handler="Delete" class="dcr-delete-form"
+                          onsubmit="return confirm('Bạn chắc chắn muốn xóa vĩnh viễn DCR này?');">
+                        <input type="hidden" name="Id" value="@Model.Id" />
+                        <label>
+                            <span>Nhập chính xác mã <strong>@Model.Dcr.DCRNumber</strong> để xác nhận</span>
+                            <input name="Confirmation" autocomplete="off" required
+                                   placeholder="@Model.Dcr.DCRNumber" aria-label="Mã DCR xác nhận xóa" />
+                        </label>
+                        <button class="dcr-btn dcr-btn--danger" type="submit">Xóa vĩnh viễn DCR</button>
+                    </form>
+                </div>
+            </section>
+        }
+    }
+</div>

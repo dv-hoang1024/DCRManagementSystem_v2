@@ -1,0 +1,11 @@
+# Dedicated DCR tunnel. DCR Web Portal and DCR API are served by the same
+# DCRManagementSystem.Api process on port 5080. WebDashboard (:5000) is not used.
+# Replace both <DCR_TUNNEL_UUID> placeholders with the UUID returned by:
+#   cloudflared.exe tunnel create dcr-tunnel
+tunnel: <DCR_TUNNEL_UUID>
+credentials-file: C:\Users\<WINDOWS_USER>\.cloudflared\<DCR_TUNNEL_UUID>.json
+
+ingress:
+  - hostname: dcr.ggpcontrol.cloud
+    service: http://127.0.0.1:5080
+  - service: http_status:404
